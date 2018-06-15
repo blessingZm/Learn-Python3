@@ -4,6 +4,7 @@ import ftplib
 from ftplib import FTP
 import os
 from FTPsome import FTP_AJ_getusers
+import time
 
 
 # 获取所有子目录
@@ -32,10 +33,12 @@ def savefile(localpath, ftppath):
     # file.split('.')[0].endswith('{}'.format(month))
     for file in files:
         if os.path.exists(os.path.join(localPath, file)):
-            continue
-        else:
-            with open(os.path.join(localpath, file), 'wb') as f:
-                ftp.retrbinary("RETR" + file, f.write, blocksize= 8192)
+            if ftp.size(file) <= os.path.getsize(os.path.join(localPath, file)):
+                continue
+            else:
+                os.remove(os.path.join(localPath, file))
+        with open(os.path.join(localpath, file), 'wb') as f:
+            ftp.retrbinary("RETR" + file, f.write, blocksize= 8192)
     print(ftppath + '目录下的所有文件复制成功!')
 
 
@@ -45,13 +48,14 @@ if __name__ == '__main__':
     port = 21
     timeOut = -999
     # 需要下载的数据年份
-    years = range(2017, 2018)
+    years = range(2018, 2019)
 
     # 登录名、密码
     for userCity, userName, passWord in FTP_AJ_getusers.get_users():
         # 根据登录的用户创建相应地市的本地城市目录
         localCityPath = 'G:\\各数据文件\\1地面数据\\全省月报表_省局下发\\{}'.format(userCity)
         os.makedirs(localCityPath, exist_ok=True)
+        print("开始下载{} 的A文件....".format(userCity))
         # 创建ftp连接
         ftp = FTP()
         ftp.connect(host= host, port= port, timeout=timeOut)
@@ -78,3 +82,4 @@ if __name__ == '__main__':
             print('{} {}年的数据复制完成'.format(userCity, year))
             print('*********************************')
         ftp.quit()
+        time.sleep(5)
